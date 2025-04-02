@@ -26,7 +26,7 @@ class Bereshit:
             :param dt: Time step since the last update.
             """
             # Calculate error
-            error = self.set_point - current_value
+            error = current_value - self.set_point
 
             # Proportional term
             proportional = self.Kp * error
@@ -65,7 +65,7 @@ class Bereshit:
     second_burn = 0.009,    # liter per sec (secondary engine fuel burn)
     vs = 24.8,              # vertical speed (m/s)
     dvs = 30,               # desired vertical speed (m/s)
-    hs = 932,               # horizontal speed (m/s)
+    hs = 1700,              # horizontal speed (m/s)
     dist = 181 * 1000,      # distance (m)
     alt = 13748,            # altitude (m)
     ang = 60,               # angle in degrees (0 is vertical)
@@ -138,6 +138,7 @@ class Bereshit:
 
         self.NN_pid.update_set_point(self.desired_vertical_speed)  # Update the set point for the PID controller
 
+
     def update_NN(self):
         """
         Update the PID controller with the current vertical speed and time step.
@@ -149,15 +150,34 @@ class Bereshit:
 
 
     def update_angle(self):
-                
+        #
         # if self.horizontal_speed <= 0:
         #     self.angle = 0
         # else:
         #     self.angle = math.degrees(math.atan(self.vertical_speed / self.horizontal_speed))
-    
-        if self.altitude < 100:
-            self.angle = 0  # vertical landing
 
+        # if self.horizontal_speed < 500:
+        #     self.angle = 60
+        # if self.altitude < 1000:
+        #     self.angle = 0  # vertical landing
+
+
+
+        if self.horizontal_speed < 10:
+            # If horizontal speed is almost zero, go vertical
+            self.angle = 0
+        elif self.altitude > 5000:
+            # High altitude: keep a steep angle
+            self.angle = min(60, self.angle + 1)  # Slowly tilt more
+        elif self.altitude > 1000:
+            # Getting lower: prepare for vertical
+            self.angle = max(40, self.angle - 1)
+        elif self.altitude > 500:
+            # Almost landing: go near vertical
+            self.angle = max(10, self.angle - 1)
+        else:
+            # Final landing phase: completely vertical
+            self.angle = 0
 
     def simulate(self):
         print("Simulating Bereshit's Landing:")
@@ -165,7 +185,7 @@ class Bereshit:
         while self.altitude > 0:
             # Print simulation status every 10 sec or when very close to the ground
             if self.time % 10 == 0 or self.altitude < 100:
-                print(f"time={self.time:.3f}, vs={self.vertical_speed:.3f}, hs={self.horizontal_speed:.3f}, dist={self.distance:.3f}, alt={self.altitude:.3f}, ang={self.angle:.3f}, weight={self.weight:.3f}, fuel={self.fuel:.3f}, acc={self.acc_val:.3f}")
+                print(f"time={self.time:.3f}, vs={self.vertical_speed:.3f}, hs={self.horizontal_speed:.3f}, dist={self.distance:.3f}, alt={self.altitude:.3f}, ang={self.angle:.3f}, weight={self.weight:.3f}, fuel={self.fuel:.3f}, acc={self.acc_val:.3f}, NN ={self.NN}")
 
             self.update_NN()  # Update the throttle using PID controller
             self.update_angle() # Update the angle based on altitude
@@ -179,27 +199,28 @@ class Bereshit:
             moon_g_acc = Moon.gravitational_pull_acc(self.horizontal_speed)
 
             self.time += self.dt
-            dw = self.dt * self.ALL_BURN * self.NN  # fuel consumption this step
+            fuel_burn = self.dt * self.ALL_BURN * self.NN  # fuel consumption this step
 
             if self.fuel > 0:
-                self.fuel -= dw
+                self.fuel -= fuel_burn
                 self.weight = self.WEIGHT_EMP + self.fuel
                 self.acc_val = self.NN * self.acc_max(self.weight)
             else:
+                print("RUN OUT OF FUEL!")
                 self.acc_val = 0  # no fuel, no thrust
 
             # Adjust vertical acceleration by lunar gravity
             v_acc -= moon_g_acc
 
-            if self.horizontal_speed > 0:
+            if self.horizontal_speed > 0: # TODO: inspect and remove after improvement
                 self.horizontal_speed -= h_acc * self.dt  # update horizontal speed
             self.vertical_speed -= v_acc * self.dt    # update vertical speed
             self.distance -= self.horizontal_speed * self.dt     # update horizontal distance
             self.altitude -=  self.vertical_speed * self.dt     # update altitude
 
-        print(f"time={self.time:.3f}, vs={self.vertical_speed:.3f}, hs={self.horizontal_speed:.3f}, dist={self.distance:.3f}, alt={self.altitude:.3f}, ang={self.angle:.3f}, weight={self.weight:.3f}, fuel={self.fuel:.3f}, acc={self.acc_val:.3f}")
+        print(f"time={self.time:.3f}, vs={self.vertical_speed:.3f}, hs={self.horizontal_speed:.3f}, dist={self.distance:.3f}, alt={self.altitude:.3f}, ang={self.angle:.3f}, weight={self.weight:.3f}, fuel={self.fuel:.3f}, acc={self.acc_val:.3f}, NN = {self.NN}")
 
 
 if __name__ == "__main__":
-    bereshit = Bereshit()
+    bereshit = Bereshit(hs=932,p=0.8,i=0.2,d=0.5)
     bereshit.simulate()
