@@ -125,15 +125,15 @@ class Bereshit:
         """
         if self.altitude < 4000:
             self.desired_vertical_speed = 24
-        elif self.altitude < 2000:
+        if self.altitude < 2000:
             self.desired_vertical_speed = 16
-        elif self.altitude < 500:
+        if self.altitude < 500:
             self.desired_vertical_speed = 12
-        elif self.altitude < 100:
+        if self.altitude < 100:
             self.desired_vertical_speed = 6
-        elif self.altitude < 20:
+        if self.altitude < 20:
             self.desired_vertical_speed = 1
-        elif self.altitude < 5:
+        if self.altitude < 5:
             self.desired_vertical_speed = 0
 
         self.NN_pid.update_set_point(self.desired_vertical_speed)  # Update the set point for the PID controller
@@ -185,8 +185,8 @@ class Bereshit:
         while self.altitude > 0:
             # Print simulation status every 10 sec or when very close to the ground
             if self.time % 10 == 0 or self.altitude < 100:
-                print(f"time={self.time:.3f}, vs={self.vertical_speed:.3f}, hs={self.horizontal_speed:.3f}, dist={self.distance:.3f}, alt={self.altitude:.3f}, ang={self.angle:.3f}, weight={self.weight:.3f}, fuel={self.fuel:.3f}, acc={self.acc_val:.3f}, NN ={self.NN}")
-
+                print(f"time={self.time:.3f}, vs={self.vertical_speed:.3f}, dvs={self.desired_vertical_speed}, hs={self.horizontal_speed:.3f}, dist={self.distance:.3f}, alt={self.altitude:.3f}, ang={self.angle:.3f}, weight={self.weight:.3f}, fuel={self.fuel:.3f}, acc={self.acc_val:.3f}, NN ={self.NN}")
+            self.update_dvs()
             self.update_NN()  # Update the throttle using PID controller
             self.update_angle() # Update the angle based on altitude
 
@@ -218,9 +218,9 @@ class Bereshit:
             self.distance -= self.horizontal_speed * self.dt     # update horizontal distance
             self.altitude -=  self.vertical_speed * self.dt     # update altitude
 
-        print(f"time={self.time:.3f}, vs={self.vertical_speed:.3f}, hs={self.horizontal_speed:.3f}, dist={self.distance:.3f}, alt={self.altitude:.3f}, ang={self.angle:.3f}, weight={self.weight:.3f}, fuel={self.fuel:.3f}, acc={self.acc_val:.3f}, NN = {self.NN}")
+        print(f"time={self.time:.3f}, vs={self.vertical_speed:.3f}, dvs={self.desired_vertical_speed}, hs={self.horizontal_speed:.3f}, dist={self.distance:.3f}, alt={self.altitude:.3f}, ang={self.angle:.3f}, weight={self.weight:.3f}, fuel={self.fuel:.3f}, acc={self.acc_val:.3f}, NN = {self.NN}")
 
 
 if __name__ == "__main__":
-    bereshit = Bereshit(hs=932,p=0.8,i=0.2,d=0.5)
+    bereshit = Bereshit(hs=932)
     bereshit.simulate()
