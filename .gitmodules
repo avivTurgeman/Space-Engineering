@@ -1,3 +1,6 @@
 [submodule "Assignments/Assinment 0/ISE_EX0"]
 	path = Assignments/Assinment 0/ISE_EX0
 	url = https://github.com/avivTurgeman/ISE_EX0.git
+[submodule "Assignments/Assinment 0/--force"]
+	path = Assignments/Assinment 0/--force
+	url = https://github.com/avivTurgeman/ISE_EX0.git
