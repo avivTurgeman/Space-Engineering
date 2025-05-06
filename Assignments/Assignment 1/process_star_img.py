@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def detect_stars(image_path):
+def detect_stars(image_path,radius_threshold=3):
     # Load image in grayscale
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if img is None:
@@ -28,7 +28,7 @@ def detect_stars(image_path):
         (x, y), radius = cv2.minEnclosingCircle(cnt)
 
         # Ensure minimum size to remove noise
-        if radius < 3:
+        if radius < radius_threshold:
             continue
 
         x, y, r = float(x), float(y), float(radius)
@@ -40,7 +40,7 @@ def detect_stars(image_path):
         # Mean brightness inside the contour
         brightness = float(np.mean(norm_img[mask == 1]))
 
-        if brightness < 0.1:
+        if brightness < 0.5:
             continue
 
         star_data.append((x, y, r, brightness))
